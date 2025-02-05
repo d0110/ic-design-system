@@ -20,6 +20,7 @@ import { ThemeProvider, Theme } from "../../context/ThemeContext";
 import { consentCookieApproved } from "../CookieBanner/cookies.helper";
 
 import { Heading, MdxFields, MdxFrontMatter } from "../../sharedTypes";
+import clsx from "clsx";
 
 const {
   STATUS,
@@ -250,7 +251,7 @@ const Layout: React.FC<LayoutProps> = ({
   return (
     <>
       <Helmet>
-        <html lang="en" />
+        <html lang="en" className={clsx(theme === "dark" && theme)} />
         <title>
           {pageTitle || TITLE} - Intelligence Community Design System
         </title>
