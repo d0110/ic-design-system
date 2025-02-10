@@ -1,0 +1,57 @@
+name: V3 Deploy
+permissions: read-all
+
+on:
+  push:
+    branches:
+      - v3-deploy-test
+
+jobs:
+  ic-design-system-static-analysis-tests:
+    name: "Static Analysis Tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 #v3
+      - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 #v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          npm ci --also=dev
+      - name: Lint site
+        run: |
+          npm run lint
+
+      - name: Audit
+        run: npm run audit
+
+  ic-design-system-deploy:
+    needs: [ic-design-system-static-analysis-tests]
+    concurrency: ci-${{ github.ref }}
+    name: "Deploy"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 #v3
+        with:
+          lfs: true
+      - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 #v3
+        with:
+          node-version: 18
+      - name: Build
+        run: |
+          export ICDS_PREFIX=/v3
+          npm ci
+          echo GATSBY_GA_TRACKING_ID=${{ secrets.GA_TRACKING_ID_DEV }} >> .env.production
+          echo GATSBY_GOOGLE_SEARCH_TOKEN=${{ secrets.GOOGLE_SEARCH_TOKEN }} >> .env.production
+          npm run build:prefixed
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e #v4
+        with:
+          repository-name: mi6/ic-design-system-githubpages
+          folder: ./public
+          target-folder: ./v3
+          token: ${{ secrets.IC_DESIGN_SYSTEM_QA }}
